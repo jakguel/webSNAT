@@ -32,8 +32,9 @@ This application provides an easy way to configure SNAT (Source Network Address 
 
 1. Clone the repository:
    ```
-   git clone https://github.com/username/snat-mapping-gateway.git
-   cd snat-mapping-gateway
+   git clone https://github.com/jakguel/webSNAT.git
+   cd webSNAT
+   npm install
    ```
 
 
@@ -70,7 +71,12 @@ This application provides an easy way to configure SNAT (Source Network Address 
 
 4. Start the service:
    ```
-   node index.js
+   npm run listen
+   ```
+5. Buil single file and run
+   ```
+   npm run build
+   node dist/index.js
    ```
 
 

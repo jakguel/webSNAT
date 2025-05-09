@@ -4,7 +4,8 @@
   "description": "A simple HTTP API service that configures source NAT mappings on a Linux gateway.",
   "main": "index.js",
   "scripts": {
-    "build": "ncc build index.js -o dist"
+    "build": "ncc build src/index.js -o dist",
+    "listen" : "node src/index.js"
   },
   "repository": {
     "type": "git",
