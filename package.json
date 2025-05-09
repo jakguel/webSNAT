@@ -1,0 +1,31 @@
+{
+  "name": "websnat",
+  "version": "1.0.0",
+  "description": "A simple HTTP API service that configures source NAT mappings on a Linux gateway.",
+  "main": "index.js",
+  "scripts": {
+    "build": "ncc build index.js -o dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jakguel/webSNAT.git"
+  },
+  "keywords": [
+    "NAT",
+    "SNAT",
+    "web",
+    "nftables",
+    "http",
+    "gateway"
+  ],
+  "author": "Jiyan Akgül",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jakguel/webSNAT/issues"
+  },
+  "homepage": "https://github.com/jakguel/webSNAT",
+  "dependencies": {
+    "async-mutex": "^0.5.0",
+    "express": "^5.1.0"
+  }
+}

@@ -1,4 +1,5 @@
 default-nftables.conf
 nftables.conf
 state.json
-node_modules
+node_modules/
+dist/
