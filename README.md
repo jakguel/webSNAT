@@ -36,20 +36,41 @@ This application provides an easy way to configure SNAT (Source Network Address 
    cd snat-mapping-gateway
    ```
 
+
 2. Configure your mappings in `mappings.json`:
+
+   See also [Configuration  mappings.json ](#mappings.json)
    ```json
    {
      "client1": "192.168.1.10",
      "client2": "192.168.1.11"
    }
    ```
-   See [Configuration  mappings.json ](#mappings.json)
 
 
-3. Start the service:
+3. Environment Variables:
+
+    **Important** Environment Variable:
+    ```
+    NFTABLES_CONF=/etc/sysconf/nftables.conf # default is 'nftables.conf'
+    ```
+    This Variables defaults to 'nftables.conf' (local directory) and needs to be set to your real nftables.conf path (most probably '/etc/sysconf/nftables.conf')
+
+    **What happens when you don't set the proper path to /etc/sysconf/nftables.conf ?**
+
+    > Pushes will may have affect on a running system but after a restart nftables service will not reload the correct configuration
+
+    **Optional** Environment Variables:
+    ```
+    MAPPING_JSON=mapping.json
+    STATE_JSON=state.json
+    ```
+
+4. Start the service:
    ```
    node index.js
    ```
+
 
 ## API Endpoints
 
@@ -129,6 +150,7 @@ This file is automatically maintained by the application and stores the active m
 - No HTTPS support out of the box
 - Limited input validation
 - Single server operation only
+- nftables config will be flushed on every refresh, if you have your own config you should add it in [pusnip.js:74-76](/pushnip.js)
 
 ## License
 Apache 2.0
