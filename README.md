@@ -1,4 +1,4 @@
-# easySNAT
+# webSNAT
 A simple HTTP API service that configures source NAT mappings on a Linux gateway.
 
 ## Overview
