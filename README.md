@@ -5,7 +5,7 @@ A simple HTTP API service that configures source NAT mappings on a Linux gateway
 This application provides an easy way to configure SNAT (Source Network Address Translation) mappings through a straightforward HTTP API interface. It allows clients to request specific source IP addresses for their outbound traffic by name reference.
 
 ## Features
-- Simple HTTP API for SNAT configuration
+- Simple HTTP API for SNAT configuration with optional API_KEY
 - Name-based mapping management & persistent state file
 - Automatic network interface detection & nftables rule management
 
@@ -64,7 +64,9 @@ This application provides an easy way to configure SNAT (Source Network Address 
     ```
     MAPPING_JSON=mapping.json
     STATE_JSON=state.json
+    API_KEY=    # ENABLED if set, DISABLED if not set
     ```
+    If you set API_KEY to a non empty string you need to provide the same value in parameter "api_key" for all requests.
 
 4. Start the service:
    ```
@@ -86,10 +88,12 @@ GET /push?ip={client_ip}&name={client_name}
 Parameters:
 - `ip`: The IP address of the client
 - `name`: The name of the client (must exist in mappings.json)
+- (Optional) `api_key`:  The API Key you configured in environment Variable "API_KEY". If you didn't API_KEY env variable or API_KEY is empty, you don't need to provide this http parameter
 
 Response:
 - 200: Mapping successfully created
 - 400: Missing parameters or invalid request
+- 403: Request parameter "api_key" not provided or wrong
 - 404: Client name not found in mappings.json or desired source IP not available on server
 - 500: Server error or configuration problem
 
@@ -101,8 +105,12 @@ Reloads the state and recreates all nftables rules.
 GET /refresh
 ```
 
+Parameters:
+- (Optional) `api_key`:  The API Key you configured in environment Variable "API_KEY". If you didn't API_KEY env variable or API_KEY is empty, you don't need to provide this http parameter
+
 Response:
 - 200: Rules successfully refreshed
+- 403: Request parameter "api_key" not provided or wrong
 - 500: Error occurred during refresh
 
 ## Configuration
@@ -145,12 +153,11 @@ This file is automatically maintained by the application and stores the active m
 ```
 
 ## Limitations
-
-- No authentication or authorization mechanisms
+- No strong authentication mechanisms, only API_KEY
 - No HTTPS support out of the box
 - Limited input validation
 - Single server operation only
-- nftables config will be flushed on every refresh, if you have your own config you should add it in [pusnip.js:74-76](/pushnip.js)
+- nftables config will be flushed on every refresh, if you have your own config you should integrate it in code[pusnip.js:74-76](/pushnip.js)
 
 ## License
 Apache 2.0

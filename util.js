@@ -1,44 +1,9 @@
 import { promises as fs } from 'fs';
 import { exec } from 'child_process';
-import {stateFile} from './globals.js'
+import { STATE_FILE } from './globals.js'
+import {Mutex, withTimeout} from 'async-mutex';
 
-
-/**
- * Acquires a file-based lock by creating a lock file.
- *
- * @async
- * @param {string} lockFilePath - The path to the lock file.
- *
- * @description
- * - Implements a simple mutex pattern using a file as the synchronization mechanism.
- * - Polls the lock file's existence at 100ms intervals until it can be acquired.
- * - When the lock file doesn't exist, creates an empty file to establish the lock.
- * - Blocks execution until the lock is successfully acquired.
- * - Downside: Does not implement timeout or deadlock detection - callers must ensure proper release.
- * - Downside: Data races possible if two concurrent calls happen and the lock file is created too late.
- *
- */
-export async function acquireLock(lockFilePath) {
-  while (await fs.access(lockFilePath).catch(() => false)) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  await fs.writeFile(lockFilePath, '');
-}
-
-/**
- * Releases a previously acquired file-based lock.
- *
- * @async
- * @param {string} lockFilePath - The path to the lock file.
- *
- * @description
- * - Removes the lock file to release the lock.
- * - Should only be called after a successful call to acquireLock().
- * - Will throw an error if the lock file doesn't exist or cannot be removed.
- */
-export async function releaseLock(lockFilePath) {
-    await fs.unlink(lockFilePath);
-}
+const mutex_store = new Mutex();
 
 /**
  * Stores the application state in a JSON file, optionally allowing a callback to modify it.
@@ -55,24 +20,22 @@ export async function releaseLock(lockFilePath) {
  * - Handles file I/O errors gracefully and rethrows them with detailed messages.
  */
 export async function store(callback) {
+  const release = await mutex_store.acquire();
   try {
-    // Acquire Lock
-    await acquireLock('state.lock');
     let state;
     try {
-      const data = await fs.readFile(stateFile, 'utf-8');
+      const data = await fs.readFile(STATE_FILE, 'utf-8');
       state = JSON.parse(data) ?? {};
     } catch (err) { state = {};}
     // return state if callback not set
     if (!callback) return state;
-    // pass state to callback
+    // else pass state to callback and store
     callback(state);
-    // write state to file again
-    await fs.writeFile(stateFile, JSON.stringify(state, null, 2));
+    await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2));
   } catch (err) {
-    throw new Error(`Error while storing or reading state file '${stateFile}': ${err.message}`);
+    throw new Error(`Error while storing or reading state file '${STATE_FILE}': ${err.message}`);
   } finally {
-    await releaseLock('state.lock');
+    await release();
   }
 }
 

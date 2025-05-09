@@ -1,8 +1,11 @@
 import { promises as fs } from 'fs';
 import os from 'os';
 import path from 'path';
-import {acquireLock, releaseLock, store, executeCommand} from './util.js'
-import {mappingFilePath, nftablesConfigPath} from './globals.js'
+import {store, executeCommand} from './util.js'
+import {MAPPINF_FILE, NFTABLES_CONF} from './globals.js'
+import {Mutex, withTimeout} from 'async-mutex';
+
+const mutex_nft = new Mutex();
 
 /**
  * - Liest sourceip aus 'mapping.json' basierend auf dem Namen.
@@ -15,16 +18,16 @@ export const push_new_ip = async function (ip, name) {
     try {
         let jsonFileContent;
         try {
-            jsonFileContent = await fs.readFile(mappingFilePath, 'utf-8');
+            jsonFileContent = await fs.readFile(MAPPINF_FILE, 'utf-8');
         } catch (fileError) {
-            throw new Error(`Error while parsing mapping configuration ${mappingFilePath}: ${fileError.message}`);
+            throw new Error(`Error while parsing mapping configuration ${MAPPINF_FILE}: ${fileError.message}`);
         }
         const mappingConfig = JSON.parse(jsonFileContent);
         const sourceip = mappingConfig[name];
 
         // todo: implement fallback or "default" IP
         if (!sourceip) {
-            throw new Error(`Server '${name}' not found in ${mappingFilePath}`);
+            throw new Error(`Server '${name}' not found in ${MAPPINF_FILE}`);
         }
         console.log(`push_new_ip: sNAT from '${name}(${ip})' to ${sourceip}`);
         // Fetch network interface by ip
@@ -45,9 +48,8 @@ export const push_new_ip = async function (ip, name) {
 * - Speichert das aktuelle nftables-Regelwerk nach 'nftables.conf' (im aktuellen Verzeichnis).
 */
 export const refresh_nftables = async function (){
-
+  let release  = await mutex_nft.acquire();
   try {
-    acquireLock('ntftables.lock');
     // Prepare state for processing
     const state = await store();
     // Group state entries by device/sourceip, alternativley the code after this block also work with the original state object
@@ -71,16 +73,16 @@ export const refresh_nftables = async function (){
       }
     }
     const nftruleset = await executeCommand( `sudo nft list ruleset`);
-    await fs.writeFile(nftablesConfigPath,`#!/usr/sbin/nft -f
+    await fs.writeFile(NFTABLES_CONF,`#!/usr/sbin/nft -f
 flush ruleset
 ${nftruleset}`);
-    console.log(`refresh_nftables: updated ${nftablesConfigPath}`)
+    console.log(`refresh_nftables: updated ${NFTABLES_CONF}`)
   } catch (error) {
       console.error(`Error refresh_nftables: ${error.message}`);
       if (error.stderr) console.error(`Stderr: ${error.stderr}`);
       return error.message;
   } finally {
-    await releaseLock('ntftables.lock');
+    await release();
   }
   return true;
 }
