@@ -30,6 +30,6 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
-    "ncc": "^0.3.6"
+    "@vercel/ncc": "^0.38.3"
   }
 }
